@@ -23,10 +23,10 @@ class Person {
         ~Person(){}
         double getamountSpent() {return amountSpent;}
         string getName() {return name;}
-        bool getmustTrade() {return mustTrade;}
+        bool getMustTrade() {return mustTrade;}
         void setamountSpent(double w) {amountSpent = w;}
         void setName(string n) {name = n;}
-        void setmustTrade(bool c) {mustTrade = c;}
+        void setMustTrade(bool c) {mustTrade = c;}
 };
 
 //Constructor definition.
@@ -35,7 +35,6 @@ Person::Person(string fullName, double d) {
     amountSpent = d;
     name = fullName;
 }
-
 
 //Function prototype to set the debts between two people.
 void debtPaidIsFriendKept(Person& A, Person& B, double target);
@@ -76,9 +75,13 @@ class LinkedList{
 		bool isEmpty() const { return head == nullptr; }
 		void clear();
 		int size() const;
+        //Helper to print the list.
         void print() const;
+        //Returns the average.
         double getAverage() const {return averageSpent;}
+        //Computes the average of the money spent by the members of the list.
         void computeAverage();
+        //Settles all debts by outputing instructions.
         void settleDebts();
 };
 
@@ -203,21 +206,25 @@ void LinkedList::settleDebts() {
     if(isEmpty()) {
         cout << "Nobody here, no debt to settle." << endl;  
     }
-    
 
-    //Iterate once over the list and remove the people who already have paid exactly the target.
+    if(size() == 1) {
+        cout << "Only one person here, no debt to settle." << endl;
+    }
+
+    //Iterate once over the list and set mustTrade to false for the people who already have paid exactly the target.
     LinkedListNode* maybeFine = head;
     while(maybeFine != nullptr) {
         Person X = maybeFine -> person;
         if(X.getamountSpent() == averageSpent) {
             cout << X.getName() << ", you don't need to do anything" << endl;
-            X.setmustTrade(false);
+            X.setMustTrade(false);
         }
         maybeFine = maybeFine -> next;
     }
 
+    //Initialize settled.
     bool settled(false);
-
+    //Loop while debts are being settled.
     do {
         settled = false;
         
@@ -225,22 +232,25 @@ void LinkedList::settleDebts() {
         LinkedListNode* currentA = head;
         while(currentA != nullptr) {
             Person& A = currentA -> person;
+
             //if A already spent the right amount, continue to the next person.
-            if(A.getmustTrade() == false) {
+            if(A.getMustTrade() == false) {
                 currentA = currentA -> next;
                 continue;
             }
 
+            //Get a person B to work with A
             LinkedListNode* currentB = currentA -> next;
             while (currentB != nullptr) {
                 Person& B = currentB -> person;
 
                 //if B already spent the right amount, continue to the next person.
-                if(B.getmustTrade() == false) {
+                if(B.getMustTrade() == false) {
                     currentB = currentB -> next;
                     continue;
                 }
 
+                //get the amount before the settlement.
                 double aBefore = A.getamountSpent();
                 double bBefore = B.getamountSpent();
 
@@ -251,14 +261,16 @@ void LinkedList::settleDebts() {
                 if (A.getamountSpent() != aBefore || B.getamountSpent() != bBefore) {
                     settled = true;
                 }
-
+                //Move to the next person.
                 currentB = currentB -> next;
             }
+            //Move to the next person.
             currentA = currentA -> next;
         }
-
     } while(settled);
+    //Repeat this while transactions are occuring.
 
+    //Output the final line.
     cout << "In the end, you should all have spent around $" << averageSpent << endl;
 }
 
@@ -274,17 +286,11 @@ void LinkedList::computeAverage() {
     averageSpent = total / size();
 }
 
-//////////
-
-
-
-
-//Function prototypes:
+//Other functions  prototypes:
 //Helper function to get a string from the user.
 string getString();
 //Helper function to print the file.
 void printFile(istream & f);
-
 //Helper functions to deal with string representing double:
 //Return true if the string represents a valid double.
 bool validDoubleString(string s);
@@ -298,23 +304,22 @@ void debtPaidIsFriendKept(Person& A, Person& B, double target);
 
 int main() {
     //String to querry the file name.
-    
-    //string querryFile;
-    //cout << "Enter the filnemane: ";
-    //querryFile = getString();
+    string querryFile;
+    cout << "Enter the filnemane: ";
+    querryFile = getString();
 
     //Declaring and opening the file.
-    string querryFile("data.txt");
     ifstream inFile;
     inFile.open(querryFile);
     
     //Declaring a list to represent the group of friends.
     LinkedList group;
+
     //Populate the list.
     populateListFromFile(inFile, group);
-
+    //Compute the average.
     group.computeAverage();
-
+    //Settle all debts.
     group.settleDebts();
 
     //Closing the file and exiting the program.
@@ -483,36 +488,33 @@ void debtPaidIsFriendKept(Person& A, Person& B, double target) {
         return;
     }
 
-    //Nothing to do here.
+    //Nothing to do here, someone is done already.
     if (a == target || b == target) {
         return;
     }
 
-    
-
     //If we are here, someone owes someone.
-
     //If A spent less than B
-    //A owes B
     if(a < b) {
         //figure out how much
         maxPossible = target - a;
-
         //Calculate what is the max that b can get without reaching the target.
         double bMaxRefund = b - target;
 
-        if(maxPossible <= bMaxRefund) {
-            refund = maxPossible;
-        } else refund = bMaxRefund;
-
-        //Update the wallet and output the transaction.
-        A.setamountSpent(a + refund);
-        B.setamountSpent(b - refund);
-        cout << A.getName() << ", you give " << B.getName() << " $" << refund << endl;
+        //Make sure that the refund will be positive.
+        if(maxPossible > 0 && bMaxRefund > 0) {
+            //Compute the refund.
+            if(maxPossible <= bMaxRefund) {
+                refund = maxPossible;
+            } else refund = bMaxRefund;
+            //Update the wallet and output the transaction.
+            A.setamountSpent(a + refund);
+            B.setamountSpent(b - refund);
+            cout << A.getName() << ", you give " << B.getName() << " $" << refund << endl;
+        }
     }
         
     //If B spent lsee than A
-    //B owes A
     else {
         //figure out how much.
         maxPossible = target - b;
@@ -520,23 +522,25 @@ void debtPaidIsFriendKept(Person& A, Person& B, double target) {
         //Calculate what is the max that b can get without reaching the target.
         double aMaxRefund = a - target;
 
-
-        if(maxPossible <= aMaxRefund) {
-            refund = maxPossible;
-        } else refund = aMaxRefund;
+        //Make sure that the refund will be positive.
+        if(maxPossible > 0 && aMaxRefund > 0) {
+            //Compute the refund.
+            if(maxPossible <= aMaxRefund) {
+                refund = maxPossible;
+            } else refund = aMaxRefund;
         
-
-        //Update the wallet and output the transaction.
-        cout << B.getName() << ", you give " << A.getName() << " $" << refund << endl;
-        A.setamountSpent(a - refund);
-        B.setamountSpent(b + refund);
+            //Update the wallet and output the transaction.
+            cout << B.getName() << ", you give " << A.getName() << " $" << refund << endl;
+            A.setamountSpent(a - refund);
+            B.setamountSpent(b + refund);
+        }
+        
     }
 
     if(A.getamountSpent() == target) {
-        A.setmustTrade(false);
+        A.setMustTrade(false);
     }
     if(B.getamountSpent() == target) {
-        B.setmustTrade(false);
-    }
-        
+        B.setMustTrade(false);
+    } 
 }
