@@ -49,7 +49,7 @@ class LinkedListNode {
 		//Constructor.
 		LinkedListNode(Person newPerson = Person(), LinkedListNode* newnext = nullptr) : person(newPerson), next(newnext) {}
 		friend class LinkedList;
-};
+}; 
 
 //Linked list class
 class LinkedList{
